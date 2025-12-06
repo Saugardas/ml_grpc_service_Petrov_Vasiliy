@@ -3,6 +3,7 @@ import pickle
 import numpy as np
 import grpc
 from concurrent import futures
+from grpc_reflection.v1alpha import reflection
 
 from protos import model_pb2, model_pb2_grpc
 
@@ -68,6 +69,13 @@ def serve():
     load_artifacts()
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     model_pb2_grpc.add_PredictionServiceServicer_to_server(PredictionService(), server)
+    # включаем reflection для gRPC
+    service_names = (
+        model_pb2.DESCRIPTOR.services_by_name['PredictionService'].full_name,
+        reflection.SERVICE_NAME,
+    )
+    reflection.enable_server_reflection(service_names, server)
+
     server.add_insecure_port("[::]:50051")
     print("Порт 50051")
     server.start()
